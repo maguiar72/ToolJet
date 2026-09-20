@@ -65,6 +65,7 @@ curl -X POST http://localhost:3000/api/onboarding/setup-super-admin \
 | `libxml2.so.2: cannot open shared object file` ao migrar ou iniciar | O clidriver do IBM Db2 depende de `libxml2.so.2`; no Ubuntu 25.10+ o pacote `libxml2` passou a fornecer `libxml2.so.16` | `bash scripts/local-dev/ensure-libxml2-compat.sh` (tenta o apt e, se necessário, instala a libxml2 2.9 do Ubuntu 24.04 em `/usr/local/lib`; já incluído pelo script de setup) |
 | `403 GET https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz` | `frontend/package.json` aponta o `xlsx` para o CDN da SheetJS | Libere o host no proxy. Em último caso, instale com o espelho `npm:@e965/xlsx@0.20.3` (mesmo build) sem versionar a alteração em `package.json`/`package-lock.json` |
 | `Unable to download sentry-cli binary` | `@sentry/cli` baixa binário de `downloads.sentry-cdn.com` | `SENTRYCLI_SKIP_DOWNLOAD=1 npm install --prefix frontend` (já incluído pelo script) |
+| `FatalProcessOutOfMemory` / `OOMErrorHandler` no `frontend.log` | O webpack ultrapassa o heap padrão do Node (~4 GB) | O `start` já exporta `NODE_OPTIONS=--max-old-space-size=6144`; ajuste com `FRONTEND_HEAP_MB=8192` se ainda faltar memória (WSL2: confira `[wsl2] memory=` em `%USERPROFILE%\.wslconfig`) |
 | `db:migrate` falha por `@tooljet/plugins/dist/server` | Plugins não compilados | `npm run build:plugins` antes de migrar |
 
 ## 6. Referências do repositório

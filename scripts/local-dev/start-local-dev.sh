@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Inicia os serviços do ToolJet em desenvolvimento: PostgREST, backend (NestJS) e frontend (webpack).
-# Logs em ./.local-dev/*.log. Para encerrar: bash scripts/local-dev/stop-local-dev.sh
+# Logs em ./.local-dev/*.log. FRONTEND_HEAP_MB ajusta o heap do webpack (padrão 6144 MB; a compilação estoura os 4 GB padrão do Node). Para encerrar: bash scripts/local-dev/stop-local-dev.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
@@ -32,7 +32,7 @@ CONF
 
 pgrep -x postgrest >/dev/null || (setsid nohup postgrest "$LOGDIR/postgrest.conf" >"$LOGDIR/postgrest.log" 2>&1 < /dev/null &)
 pgrep -f "[n]est start|[s]tart:dev" >/dev/null || (cd server && setsid nohup npm run start:dev >"$LOGDIR/server.log" 2>&1 < /dev/null &)
-pgrep -f "[w]ebpack serve|[n]pm start" >/dev/null || (cd frontend && setsid nohup npm start >"$LOGDIR/frontend.log" 2>&1 < /dev/null &)
+pgrep -f "[w]ebpack serve|[n]pm start" >/dev/null || (cd frontend && NODE_OPTIONS="--max-old-space-size=${FRONTEND_HEAP_MB:-6144}" setsid nohup npm start >"$LOGDIR/frontend.log" 2>&1 < /dev/null &)
 
 echo "Aguardando backend (http://localhost:${PORT:-3000}/api/health); a primeira compilação leva alguns minutos..."
 ok=0
