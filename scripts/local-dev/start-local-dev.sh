@@ -5,9 +5,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+  echo "nvm não encontrado em $NVM_DIR. Execute antes: bash scripts/local-dev/setup-local-dev.sh" >&2
+  exit 1
+fi
 # shellcheck disable=SC1091
-. "$NVM_DIR/nvm.sh"
-nvm use "$(node -p "require('./server/package.json').engines.node")" >/dev/null
+. "$NVM_DIR/nvm.sh" --no-use   # --no-use: nao ativar a versao do .nvmrc antes de instalada
+nvm use "$(tr -d 'v[:space:]' < .nvmrc)" >/dev/null
 
 set -a; . ./.env; set +a
 LOGDIR="$ROOT/.local-dev"; mkdir -p "$LOGDIR"

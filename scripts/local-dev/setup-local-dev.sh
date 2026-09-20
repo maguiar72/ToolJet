@@ -16,8 +16,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
-NODE_VERSION="$(node -p "require('./server/package.json').engines.node")"
-NPM_VERSION="$(node -p "require('./server/package.json').engines.npm" 2>/dev/null || echo 10.9.2)"
+# Versões lidas sem depender de um Node já instalado (.nvmrc espelha server/package.json).
+NODE_VERSION="$(tr -d 'v[:space:]' < .nvmrc)"
+NPM_VERSION="$(sed -n 's/.*"npm": *"\([^"]*\)".*/\1/p' server/package.json | head -1)"
+NPM_VERSION="${NPM_VERSION:-10.9.2}"
 PG_ADMIN_PASS="${PG_ADMIN_PASS:-postgres}"
 POSTGREST_VERSION="v12.2.0"
 
@@ -30,7 +32,7 @@ if [ ! -s "$NVM_DIR/nvm.sh" ]; then
   curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 fi
 # shellcheck disable=SC1091
-. "$NVM_DIR/nvm.sh"
+. "$NVM_DIR/nvm.sh" --no-use   # --no-use: nao ativar a versao do .nvmrc antes de instalada
 nvm install "$NODE_VERSION" >/dev/null
 nvm use "$NODE_VERSION" >/dev/null
 nvm alias default "$NODE_VERSION" >/dev/null
