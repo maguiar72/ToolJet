@@ -34,10 +34,21 @@ pgrep -x postgrest >/dev/null || (setsid nohup postgrest "$LOGDIR/postgrest.conf
 pgrep -f "nest start" >/dev/null || (cd server && setsid nohup npm run start:dev >"$LOGDIR/server.log" 2>&1 < /dev/null &)
 pgrep -f "webpack serve" >/dev/null || (cd frontend && setsid nohup npm start >"$LOGDIR/frontend.log" 2>&1 < /dev/null &)
 
-echo "Aguardando backend (http://localhost:${PORT:-3000}/api/health)..."
-for _ in $(seq 1 120); do
-  curl -sf "http://localhost:${PORT:-3000}/api/health" >/dev/null && break
+echo "Aguardando backend (http://localhost:${PORT:-3000}/api/health); a primeira compilação leva alguns minutos..."
+ok=0
+for i in $(seq 1 200); do
+  if curl -sf "http://localhost:${PORT:-3000}/api/health" >/dev/null; then ok=1; break; fi
+  if ! pgrep -f "nest start" >/dev/null; then
+    echo; echo "O processo do backend encerrou. Últimas linhas de $LOGDIR/server.log:" >&2
+    tail -n 60 "$LOGDIR/server.log" >&2; exit 1
+  fi
+  [ $((i % 10)) -eq 0 ] && echo "  ... ainda compilando/iniciando ($((i*3))s)"
   sleep 3
 done
-curl -s "http://localhost:${PORT:-3000}/api/health"; echo
-echo "Frontend: http://localhost:8082  (a primeira compilação do webpack leva alguns minutos; ver $LOGDIR/frontend.log)"
+if [ "$ok" -ne 1 ]; then
+  echo; echo "Backend não respondeu em 10 minutos. Últimas linhas de $LOGDIR/server.log:" >&2
+  tail -n 60 "$LOGDIR/server.log" >&2; exit 1
+fi
+echo "Backend OK: $(curl -s "http://localhost:${PORT:-3000}/api/health")"
+echo "PostgREST: $(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/)  Redis: $(redis-cli ping 2>/dev/null || echo sem resposta)"
+echo "Frontend: http://localhost:8082  (aguarde 'compiled' em $LOGDIR/frontend.log: tail -f $LOGDIR/frontend.log)"
