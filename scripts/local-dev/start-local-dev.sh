@@ -31,14 +31,14 @@ log-level = "info"
 CONF
 
 pgrep -x postgrest >/dev/null || (setsid nohup postgrest "$LOGDIR/postgrest.conf" >"$LOGDIR/postgrest.log" 2>&1 < /dev/null &)
-pgrep -f "nest start" >/dev/null || (cd server && setsid nohup npm run start:dev >"$LOGDIR/server.log" 2>&1 < /dev/null &)
-pgrep -f "webpack serve" >/dev/null || (cd frontend && setsid nohup npm start >"$LOGDIR/frontend.log" 2>&1 < /dev/null &)
+pgrep -f "[n]est start|[s]tart:dev" >/dev/null || (cd server && setsid nohup npm run start:dev >"$LOGDIR/server.log" 2>&1 < /dev/null &)
+pgrep -f "[w]ebpack serve|[n]pm start" >/dev/null || (cd frontend && setsid nohup npm start >"$LOGDIR/frontend.log" 2>&1 < /dev/null &)
 
 echo "Aguardando backend (http://localhost:${PORT:-3000}/api/health); a primeira compilação leva alguns minutos..."
 ok=0
 for i in $(seq 1 200); do
   if curl -sf "http://localhost:${PORT:-3000}/api/health" >/dev/null; then ok=1; break; fi
-  if ! pgrep -f "nest start" >/dev/null; then
+  if [ "$i" -gt 5 ] && ! pgrep -f "[n]est start|[s]tart:dev" >/dev/null; then
     echo; echo "O processo do backend encerrou. Últimas linhas de $LOGDIR/server.log:" >&2
     tail -n 60 "$LOGDIR/server.log" >&2; exit 1
   fi
