@@ -26,7 +26,7 @@ O script:
 
 1. instala Node/npm pelo `nvm`;
 2. inicia PostgreSQL e Redis e define a senha do usuário `postgres` (padrão `postgres`, ajustável com `PG_ADMIN_PASS`);
-3. instala o binário do PostgREST em `/usr/local/bin`;
+3. garante `libxml2.so.2` para o conector IBM Db2 e instala o binário do PostgREST em `/usr/local/bin`;
 4. gera o `.env` com chaves aleatórias (`LOCKBOX_MASTER_KEY`, `SECRET_KEY_BASE`, `PGRST_JWT_SECRET`);
 5. instala as dependências (raiz, `server`, `plugins`, `frontend`) e compila os plugins;
 6. cria os bancos `tooljet_development`, `tooljet_db` e `sample_db` e executa as migrações.
@@ -62,6 +62,7 @@ curl -X POST http://localhost:3000/api/onboarding/setup-super-admin \
 |---|---|---|
 | `listen EAFNOSUPPORT :::3000` | Host sem IPv6; o backend escuta em `::` por padrão | `LISTEN_ADDR=0.0.0.0` no `.env` (já incluído pelo script) |
 | `Could not locate the bindings file ... ibm_db` ao migrar | O `postinstall` do conector IBM Db2 baixa o *clidriver* de `public.dhe.ibm.com`; bloqueado por proxy | Baixe `linuxx64_odbc_cli.tar.gz` (repositório `ibmdb/db2drivers`, pasta `clidriver/`), copie para `plugins/node_modules/ibm_db/installer/` e rode `IBM_DB_INSTALLER_URL=$PWD/plugins/node_modules/ibm_db/installer/ node plugins/node_modules/ibm_db/installer/driverInstall.js` |
+| `libxml2.so.2: cannot open shared object file` ao migrar ou iniciar | O clidriver do IBM Db2 depende de `libxml2.so.2`; no Ubuntu 25.10+ o pacote `libxml2` passou a fornecer `libxml2.so.16` | `bash scripts/local-dev/ensure-libxml2-compat.sh` (tenta o apt e, se necessário, instala a libxml2 2.9 do Ubuntu 24.04 em `/usr/local/lib`; já incluído pelo script de setup) |
 | `403 GET https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz` | `frontend/package.json` aponta o `xlsx` para o CDN da SheetJS | Libere o host no proxy. Em último caso, instale com o espelho `npm:@e965/xlsx@0.20.3` (mesmo build) sem versionar a alteração em `package.json`/`package-lock.json` |
 | `Unable to download sentry-cli binary` | `@sentry/cli` baixa binário de `downloads.sentry-cdn.com` | `SENTRYCLI_SKIP_DOWNLOAD=1 npm install --prefix frontend` (já incluído pelo script) |
 | `db:migrate` falha por `@tooljet/plugins/dist/server` | Plugins não compilados | `npm run build:plugins` antes de migrar |

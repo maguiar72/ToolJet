@@ -49,6 +49,10 @@ log "Definindo senha do usuário postgres"
 (sudo -u postgres psql -c "ALTER USER postgres PASSWORD '${PG_ADMIN_PASS}';" 2>/dev/null \
   || su postgres -c "psql -c \"ALTER USER postgres PASSWORD '${PG_ADMIN_PASS}';\"") >/dev/null
 
+# ------------------------------------------------- libxml2.so.2 (IBM Db2 clidriver)
+log "Verificando libxml2.so.2 (exigida pelo conector IBM Db2)"
+bash "$ROOT/scripts/local-dev/ensure-libxml2-compat.sh"
+
 # ------------------------------------------------------------------ PostgREST
 if ! command -v postgrest >/dev/null 2>&1; then
   log "Instalando PostgREST ${POSTGREST_VERSION}"
